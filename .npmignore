@@ -1,0 +1,38 @@
+# Source code
+/nodes
+/credentials
+/src
+
+# Development files
+.eslintrc.js
+.eslintrc.prepublish.js
+.prettierrc.js
+.editorconfig
+.gitignore
+gulpfile.js
+tsconfig.json
+jest.config.js
+
+# Documentation
+/docs
+CONTRIBUTING.md
+
+# Tests
+/__tests__
+/test
+*.test.js
+*.spec.js
+
+# Development tools
+.vscode/
+.idea/
+.github/
+
+# Misc
+.DS_Store
+*.log
+.env*
+.npmrc
+
+# Dependencies
+node_modules/
