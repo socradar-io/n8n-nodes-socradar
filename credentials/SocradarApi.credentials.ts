@@ -4,7 +4,10 @@ export class SocradarApi implements ICredentialType {
 	name = 'socradarApi';
 	displayName = 'SOCRadar API';
 	documentationUrl = 'https://help.socradar.io/';
-	// Icon is defined in the node itself
+	icon = {
+		light: 'file:icons/socradar.svg',
+		dark: 'file:icons/socradar.svg',
+	} as const;
 	properties: INodeProperties[] = [
 		{
 			displayName: 'API Key',

@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.8.4 (2025-03-07)
+
+### Fixed
+- Fixed credential icon display issue:
+  - Added proper icon support for credentials in n8n UI
+  - Updated gulpfile.js to copy credential icons during build
+  - Modified .npmignore to include credential icons in package
+  - Implemented light/dark mode icon support
+
 ## 1.8.3 (2025-03-06)
 
 ### Fixed

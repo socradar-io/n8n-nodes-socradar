@@ -1,6 +1,7 @@
 # Source code
 /nodes
 /credentials
+!/credentials/icons
 /src
 
 # Development files

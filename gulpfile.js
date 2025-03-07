@@ -1,10 +1,18 @@
-const { src, dest } = require('gulp');
+const { src, dest, parallel } = require('gulp');
 
 /**
- * Copy Icon files to the dist folder
+ * Copy Node Icon files to the dist folder
  */
-function buildIcons() {
+function buildNodeIcons() {
 	return src('./nodes/**/*.svg').pipe(dest('./dist/nodes'));
 }
 
-exports['build:icons'] = buildIcons;
+/**
+ * Copy Credential Icon files to the dist folder
+ */
+function buildCredentialIcons() {
+	return src('./credentials/icons/*.svg').pipe(dest('./dist/credentials/icons'));
+}
+
+// Create a combined build icons task
+exports['build:icons'] = parallel(buildNodeIcons, buildCredentialIcons);

@@ -1,6 +1,6 @@
 {
   "name": "@socradar/n8n-nodes-socradar",
-  "version": "1.8.3",
+  "version": "1.8.4",
   "description": "Production-ready n8n integration for SOCRadar Extended Threat Intelligence platform",
   "keywords": [
     "n8n-community-node-package",
