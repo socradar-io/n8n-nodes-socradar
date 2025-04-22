@@ -43,21 +43,18 @@ async function handleGetAuditLogs(
   i: number,
 ): Promise<INodeExecutionData> {
   const additionalFields = this.getNodeParameter('additionalFields', i, {}) as {
-    searchString?: string;
     startDate?: string;
     endDate?: string;
     page?: number;
     limit?: number;
-    orderDir?: string;
+		userId?: string;
+		actionType?: string;
   };
 
-  const endpoint = `${baseUrl}/company/${companyId}/audit-logs`;
+  const endpoint = `${baseUrl}/company/${companyId}/auditLogs`;
   const queryParams: Record<string, string | number | boolean> = {};
 
   // Add all additional fields to query parameters
-  if (additionalFields.searchString) {
-    queryParams.searchString = additionalFields.searchString;
-  }
   if (additionalFields.startDate) {
     queryParams.startDate = additionalFields.startDate;
   }
@@ -70,9 +67,12 @@ async function handleGetAuditLogs(
   if (additionalFields.limit) {
     queryParams.limit = additionalFields.limit;
   }
-  if (additionalFields.orderDir) {
-    queryParams.orderDir = additionalFields.orderDir;
-  }
+	if (additionalFields.userId) {
+		queryParams.userId = additionalFields.userId;
+	}
+	if (additionalFields.actionType) {
+		queryParams.actionType = additionalFields.actionType;
+	}
 
   const options: IHttpRequestOptions = {
     method: 'GET',
