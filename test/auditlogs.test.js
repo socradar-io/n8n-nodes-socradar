@@ -103,7 +103,7 @@ async function testUserAuditLogs() {
     // Make the request
     const response = await makeRequest({
       method: 'GET',
-      url: `${config.baseUrl}/company/${config.companyId}/audit-logs`,
+      url: `${config.baseUrl}/company/${config.companyId}/auditLogs`,
       headers,
       params
     });
