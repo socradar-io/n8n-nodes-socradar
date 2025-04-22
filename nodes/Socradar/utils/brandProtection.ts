@@ -1,5 +1,4 @@
-import { IExecuteFunctions, INodeExecutionData, NodeOperationError } from 'n8n-workflow';
-import axios, { AxiosRequestConfig } from 'axios';
+import { IExecuteFunctions, IHttpRequestOptions, INodeExecutionData, NodeOperationError } from 'n8n-workflow';
 
 /**
  * Handle all brand protection related operations
@@ -32,8 +31,6 @@ export async function handleBrandProtectionOperations(
     throw new NodeOperationError(this.getNode(), `Brand Protection Error: ${error.message}`, { itemIndex: i });
   }
 }
-
-
 
 /**
  * Handle getting brand protection data by operation type
@@ -120,16 +117,16 @@ async function handleGetBrandProtection(
     queryParams.orderDir = additionalFields.orderDir;
   }
 
-  const options: AxiosRequestConfig = {
+  const options: IHttpRequestOptions = {
     method: 'GET',
     url: endpoint,
     headers,
-    params: queryParams,
+    qs: queryParams,
   };
 
-  const response = await axios(options);
+  const response = await this.helpers.httpRequest(options);
   return {
-    json: response.data,
+    json: response,
     pairedItem: { item: i },
   };
 }

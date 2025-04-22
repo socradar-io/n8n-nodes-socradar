@@ -10,20 +10,21 @@
  * - Toggle Monitoring
  * 
  * Usage:
- * 1. Set your API key and company ID in the configuration section
+ * 1. Make sure your API key and company ID are set in the .env.test file
  * 2. Uncomment the tests you want to run
- * 3. Run with: node test-digitalfootprint-comprehensive.js
+ * 3. Run with: npm test -- digitalfootprint-comprehensive.test.js
  */
 
-const axios = require('axios');
+const https = require('https');
 const fs = require('fs');
 const path = require('path');
+const { config, headers, testData } = require('./testUtils');
 
 // Configuration
 const CONFIG = {
-  API_KEY: 'YOUR_API_KEY', // Replace with your actual API key
-  COMPANY_ID: 'YOUR_COMPANY_ID', // Replace with your actual company ID
-  BASE_URL: 'https://api.socradar.io/api/v1',
+  API_KEY: config.apiKey,
+  COMPANY_ID: config.companyId,
+  BASE_URL: config.baseUrl,
   LOG_DIRECTORY: './test-logs',
   LOG_RESPONSES: true, // Set to false to disable response logging
 };
@@ -35,11 +36,75 @@ if (CONFIG.LOG_RESPONSES) {
   }
 }
 
-// Headers
-const headers = {
-  'Api-Key': CONFIG.API_KEY,
-  'Content-Type': 'application/json'
-};
+// Helper function to make HTTP requests
+function makeRequest(options, data = null) {
+  return new Promise((resolve, reject) => {
+    // Parse the URL to extract hostname, path, etc.
+    const url = new URL(options.url);
+    
+    // Prepare request options
+    const requestOptions = {
+      hostname: url.hostname,
+      path: url.pathname + (url.search || ''),
+      method: options.method,
+      headers: options.headers,
+    };
+    
+    // Add query parameters if provided
+    if (options.params) {
+      const queryParams = new URLSearchParams();
+      Object.entries(options.params).forEach(([key, value]) => {
+        queryParams.append(key, value);
+      });
+      requestOptions.path += (url.search ? '&' : '?') + queryParams.toString();
+    }
+    
+    const req = https.request(requestOptions, (res) => {
+      let responseData = '';
+      
+      res.on('data', (chunk) => {
+        responseData += chunk;
+      });
+      
+      res.on('end', () => {
+        try {
+          const parsedData = JSON.parse(responseData);
+          if (res.statusCode >= 200 && res.statusCode < 300) {
+            resolve({ data: parsedData, status: res.statusCode });
+          } else {
+            reject({
+              response: {
+                status: res.statusCode,
+                statusText: res.statusMessage,
+                data: parsedData
+              },
+              message: `Request failed with status code ${res.statusCode}`
+            });
+          }
+        } catch (error) {
+          reject({
+            message: 'Error parsing response data',
+            error,
+            responseData
+          });
+        }
+      });
+    });
+    
+    req.on('error', (error) => {
+      reject({
+        message: 'Request error',
+        error
+      });
+    });
+    
+    if (data) {
+      req.write(JSON.stringify(data));
+    }
+    
+    req.end();
+  });
+}
 
 // Utility functions
 const logResponse = (testName, data) => {
@@ -88,7 +153,7 @@ async function testGetDigitalAssets(options = {}) {
     
     console.log(`Parameters:`, params);
     
-    const response = await axios({
+    const response = await makeRequest({
       method: 'GET',
       url: `${CONFIG.BASE_URL}/company/${CONFIG.COMPANY_ID}/asm`,
       headers,
@@ -115,7 +180,7 @@ async function testGetCloudBuckets() {
   try {
     console.log(`\n🔍 Testing ${testName}...`);
     
-    const response = await axios({
+    const response = await makeRequest({
       method: 'GET',
       url: `${CONFIG.BASE_URL}/company/${CONFIG.COMPANY_ID}/asm/get/cloudBuckets`,
       headers
@@ -150,12 +215,11 @@ async function testAddDomain(domainName = 'test-domain-' + Date.now() + '.com') 
     
     console.log(`Adding domain: ${data.domain}`);
     
-    const response = await axios({
+    const response = await makeRequest({
       method: 'POST',
       url: `${CONFIG.BASE_URL}/company/${CONFIG.COMPANY_ID}/asm/add/domain`,
-      headers,
-      data
-    });
+      headers
+    }, data);
     
     console.log(`✅ ${testName} successful!`);
     console.log(`Domain added: ${data.domain}`);
@@ -183,12 +247,11 @@ async function testAddCloudBucket() {
     
     console.log(`Adding cloud bucket: ${data.asset_name}`);
     
-    const response = await axios({
+    const response = await makeRequest({
       method: 'POST',
       url: `${CONFIG.BASE_URL}/company/${CONFIG.COMPANY_ID}/asm/add/cloudBuckets`,
-      headers,
-      data
-    });
+      headers
+    }, data);
     
     console.log(`✅ ${testName} successful!`);
     console.log(`Cloud bucket added: ${data.asset_name}`);
@@ -207,27 +270,26 @@ async function testMarkFalsePositive(assetId, assetType = 'domain', subType = 'n
     console.log(`\n🔍 Testing ${testName}...`);
     
     if (!assetId) {
-      throw new Error('Asset ID is required for this test');
+      console.log(`⚠️ Skipping ${testName} - No assetId provided`);
+      return null;
     }
+    
+    console.log(`Marking asset ${assetId} as false positive`);
     
     const data = {
       asset_id: assetId,
       asset_type: assetType,
       sub_type: subType,
-      notes: `Marked as false positive during test at ${new Date().toISOString()}`
+      notes: `Test false positive mark ${Date.now()}`
     };
     
-    console.log(`Marking asset ${assetId} as false positive`);
-    
-    const response = await axios({
+    const response = await makeRequest({
       method: 'POST',
-      url: `${CONFIG.BASE_URL}/company/${CONFIG.COMPANY_ID}/asm/fp`,
-      headers,
-      data
-    });
+      url: `${CONFIG.BASE_URL}/company/${CONFIG.COMPANY_ID}/asm/mark/falsePositive`,
+      headers
+    }, data);
     
     console.log(`✅ ${testName} successful!`);
-    console.log(`Asset ${assetId} marked as false positive`);
     
     logResponse(testName, response.data);
     return response.data;
@@ -243,8 +305,11 @@ async function testToggleMonitoring(assetId, isMonitorOn = true, assetType = 'do
     console.log(`\n🔍 Testing ${testName}...`);
     
     if (!assetId) {
-      throw new Error('Asset ID is required for this test');
+      console.log(`⚠️ Skipping ${testName} - No assetId provided`);
+      return null;
     }
+    
+    console.log(`Setting monitoring for asset ${assetId} to ${isMonitorOn ? 'ON' : 'OFF'}`);
     
     const data = {
       asset_id: assetId,
@@ -253,17 +318,13 @@ async function testToggleMonitoring(assetId, isMonitorOn = true, assetType = 'do
       is_monitor_on: isMonitorOn
     };
     
-    console.log(`${isMonitorOn ? 'Enabling' : 'Disabling'} monitoring for asset ${assetId}`);
-    
-    const response = await axios({
+    const response = await makeRequest({
       method: 'POST',
-      url: `${CONFIG.BASE_URL}/company/${CONFIG.COMPANY_ID}/asm/monitor`,
-      headers,
-      data
-    });
+      url: `${CONFIG.BASE_URL}/company/${CONFIG.COMPANY_ID}/asm/set/monitor`,
+      headers
+    }, data);
     
     console.log(`✅ ${testName} successful!`);
-    console.log(`Monitoring ${isMonitorOn ? 'enabled' : 'disabled'} for asset ${assetId}`);
     
     logResponse(testName, response.data);
     return response.data;
@@ -275,47 +336,41 @@ async function testToggleMonitoring(assetId, isMonitorOn = true, assetType = 'do
 
 // Run tests
 async function runTests() {
+  console.log('🚀 Starting SOCRadar Digital Footprint API Tests...');
+  console.log('API Key:', CONFIG.API_KEY ? '✅ Set' : '❌ Not Set');
+  console.log('Company ID:', CONFIG.COMPANY_ID);
+  
   try {
-    console.log('=== Testing SOCRadar Digital Footprint API ===');
-    console.log(`Company ID: ${CONFIG.COMPANY_ID}`);
-    console.log(`API Base URL: ${CONFIG.BASE_URL}`);
-    console.log('===========================================\n');
+    // Test getting digital assets with different filters
+    await testGetDigitalAssets({ assetType: 'domain' });
+    // await testGetDigitalAssets({ assetType: 'ip' });
+    // await testGetDigitalAssets({ assetType: 'domain', sortBy: 'created_at', sortDesc: true });
     
-    // Test Get Digital Assets with different filters
-    await testGetDigitalAssets({ assetType: 'domain', pageLimit: 5 });
-    // await testGetDigitalAssets({ assetType: 'ipAddress', pageLimit: 5 });
-    // await testGetDigitalAssets({ sortBy: 'assetName', sortDesc: false, pageLimit: 5 });
-    
-    // Test Get Cloud Buckets
+    // Test getting cloud buckets
     // await testGetCloudBuckets();
     
-    // Test Add Domain
-    // const domainName = 'test-domain-' + Date.now() + '.com';
-    // await testAddDomain(domainName);
+    // Test adding a domain
+    // Note: This will add a test domain to your account
+    // const addDomainResult = await testAddDomain();
     
-    // Test Add Cloud Bucket
-    // await testAddCloudBucket();
+    // Test adding a cloud bucket
+    // Note: This will add a test cloud bucket to your account
+    // const addCloudBucketResult = await testAddCloudBucket();
     
-    // To test Mark False Positive and Toggle Monitoring, you need an asset ID
-    // First, get assets and extract an ID
-    // const assets = await testGetDigitalAssets({ pageLimit: 1 });
-    // if (assets?.assets?.length > 0) {
-    //   const assetId = assets.assets[0].assetID;
-    //   console.log(`Using asset ID: ${assetId} for further tests`);
-    //   
-    //   // Test Mark False Positive
-    //   await testMarkFalsePositive(assetId);
-    //   
-    //   // Test Toggle Monitoring (enable)
-    //   await testToggleMonitoring(assetId, true);
-    //   
-    //   // Test Toggle Monitoring (disable)
-    //   await testToggleMonitoring(assetId, false);
-    // }
+    // Test marking an asset as false positive
+    // Note: You need to provide a valid assetId from your account
+    // const assetIdToMarkFalsePositive = '...'; // Replace with a valid asset ID
+    // await testMarkFalsePositive(assetIdToMarkFalsePositive);
     
-    console.log('\n=== All tests completed ===');
+    // Test toggling monitoring for an asset
+    // Note: You need to provide a valid assetId from your account
+    // const assetIdToToggleMonitoring = '...'; // Replace with a valid asset ID
+    // await testToggleMonitoring(assetIdToToggleMonitoring, true); // Turn monitoring ON
+    // await testToggleMonitoring(assetIdToToggleMonitoring, false); // Turn monitoring OFF
+    
+    console.log('\n✅ All tests completed successfully!');
   } catch (error) {
-    console.error('\n❌ Test suite failed:', error.message);
+    console.error('\n❌ Tests failed:', error.message);
   }
 }
 

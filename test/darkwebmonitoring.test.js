@@ -1,27 +1,89 @@
-// SOCRadar Dark Web Monitoring API V2 Test Script
-// This script tests the Dark Web Monitoring API V2 functionality
+/**
+ * SOCRadar Dark Web Monitoring API Test Script
+ * 
+ * This script tests the Dark Web Monitoring API V2 functionality of the SOCRadar platform.
+ */
 
-const axios = require('axios');
-require('dotenv').config();
+const https = require('https');
+const { config, headers, testData } = require('./testUtils');
 
-// Configuration
-const API_KEY = process.env.SOCRADAR_API_KEY || 'your-api-key';
-const COMPANY_ID = process.env.SOCRADAR_COMPANY_ID || 'your-company-id';
-const BASE_URL = 'https://api.socradar.io/api/v2';
-
-// Headers
-const headers = {
-  'Api-Key': API_KEY,
-  'Content-Type': 'application/json',
-};
+// Helper function to make HTTP requests
+function makeRequest(options, data = null) {
+  return new Promise((resolve, reject) => {
+    // Parse the URL to extract hostname, path, etc.
+    const url = new URL(options.url);
+    
+    // Prepare request options
+    const requestOptions = {
+      hostname: url.hostname,
+      path: url.pathname + (url.search || ''),
+      method: options.method,
+      headers: options.headers,
+    };
+    
+    // Add query parameters if provided
+    if (options.params) {
+      const queryParams = new URLSearchParams();
+      Object.entries(options.params).forEach(([key, value]) => {
+        queryParams.append(key, value);
+      });
+      requestOptions.path += (url.search ? '&' : '?') + queryParams.toString();
+    }
+    
+    const req = https.request(requestOptions, (res) => {
+      let responseData = '';
+      
+      res.on('data', (chunk) => {
+        responseData += chunk;
+      });
+      
+      res.on('end', () => {
+        try {
+          const parsedData = JSON.parse(responseData);
+          if (res.statusCode >= 200 && res.statusCode < 300) {
+            resolve({ data: parsedData, status: res.statusCode });
+          } else {
+            reject({
+              response: {
+                status: res.statusCode,
+                statusText: res.statusMessage,
+                data: parsedData
+              },
+              message: `Request failed with status code ${res.statusCode}`
+            });
+          }
+        } catch (error) {
+          reject({
+            message: 'Error parsing response data',
+            error,
+            responseData
+          });
+        }
+      });
+    });
+    
+    req.on('error', (error) => {
+      reject({
+        message: 'Request error',
+        error
+      });
+    });
+    
+    if (data) {
+      req.write(JSON.stringify(data));
+    }
+    
+    req.end();
+  });
+}
 
 // Test functions
 async function testBotnetData() {
   console.log('\n=== Testing Botnet Data API ===');
   try {
-    const response = await axios({
+    const response = await makeRequest({
       method: 'GET',
-      url: `${BASE_URL}/company/${COMPANY_ID}/dark-web-monitoring/botnet-data/v2`,
+      url: `${config.baseUrl}/company/${config.companyId}/dark-web-monitoring/botnet-data/v2`,
       headers,
       params: {
         recordStatus: 'OPEN',
@@ -44,9 +106,9 @@ async function testBotnetData() {
 async function testBlackmarketData() {
   console.log('\n=== Testing Blackmarket Data API ===');
   try {
-    const response = await axios({
+    const response = await makeRequest({
       method: 'GET',
-      url: `${BASE_URL}/company/${COMPANY_ID}/dark-web-monitoring/blackmarket/v2`,
+      url: `${config.baseUrl}/company/${config.companyId}/dark-web-monitoring/blackmarket/v2`,
       headers,
       params: {
         page: 1,
@@ -68,9 +130,9 @@ async function testBlackmarketData() {
 async function testSuspiciousContent() {
   console.log('\n=== Testing Suspicious Content API ===');
   try {
-    const response = await axios({
+    const response = await makeRequest({
       method: 'GET',
-      url: `${BASE_URL}/company/${COMPANY_ID}/dark-web-monitoring/suspicious-content/v2`,
+      url: `${config.baseUrl}/company/${config.companyId}/dark-web-monitoring/suspicious-content/v2`,
       headers,
       params: {
         limit: 5,
@@ -91,9 +153,9 @@ async function testSuspiciousContent() {
 async function testPiiExposure() {
   console.log('\n=== Testing PII Exposure API ===');
   try {
-    const response = await axios({
+    const response = await makeRequest({
       method: 'GET',
-      url: `${BASE_URL}/company/${COMPANY_ID}/dark-web-monitoring/pii-exposure/v2`,
+      url: `${config.baseUrl}/company/${config.companyId}/dark-web-monitoring/pii-exposure/v2`,
       headers,
       params: {
         limit: 5,
@@ -114,9 +176,9 @@ async function testPiiExposure() {
 async function testImContent() {
   console.log('\n=== Testing IM Content API ===');
   try {
-    const response = await axios({
+    const response = await makeRequest({
       method: 'GET',
-      url: `${BASE_URL}/company/${COMPANY_ID}/dark-web-monitoring/im-content/v2`,
+      url: `${config.baseUrl}/company/${config.companyId}/dark-web-monitoring/im-content/v2`,
       headers,
       params: {
         limit: 5,
@@ -137,8 +199,8 @@ async function testImContent() {
 // Run all tests
 async function runAllTests() {
   console.log('🔍 Starting SOCRadar Dark Web Monitoring API V2 Tests...');
-  console.log('API Key:', API_KEY ? '✅ Set' : '❌ Not Set');
-  console.log('Company ID:', COMPANY_ID);
+  console.log('API Key:', config.apiKey ? '✅ Set' : '❌ Not Set');
+  console.log('Company ID:', config.companyId);
   
   let results = {
     botnetData: false,

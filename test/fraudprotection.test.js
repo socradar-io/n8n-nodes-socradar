@@ -1,77 +1,139 @@
 /**
- * Test script for SOCRadar DRP Fraud Protection API V2
+ * SOCRadar Fraud Protection API Test Script
  * 
- * This script tests the DRP Fraud Protection API V2 functionality
- * in the SOCRadar n8n integration.
+ * This script tests the Fraud Protection API V2 functionality of the SOCRadar platform.
+ * It performs the following operations:
+ * - Fetches fraud protection data with various filters
  * 
  * Usage:
- * 1. Set environment variables:
- *    - SOCRADAR_API_KEY: Your SOCRadar API key
- *    - SOCRADAR_COMPANY_ID: Your company ID
- * 2. Run: node test-fraudprotection.js
+ * 1. Make sure your API key and company ID are set in the .env.test file
+ * 2. Run with: npm test -- fraudprotection.test.js
  * 
- * Example:
- * SOCRADAR_API_KEY=your_api_key SOCRADAR_COMPANY_ID=your_company_id node test-fraudprotection.js
+ * Note: This is a read-only test that doesn't modify any data in your SOCRadar account.
  */
 
-const axios = require('axios');
-
-// Try to load environment variables from .env file if it exists
-try {
-  require('dotenv').config();
-} catch (error) {
-  console.log('No .env file found, using environment variables directly');
-}
+const https = require('https');
+const { config, headers, testData } = require('./testUtils');
 
 // Configuration
-const API_KEY = process.env.SOCRADAR_API_KEY;
-const COMPANY_ID = process.env.SOCRADAR_COMPANY_ID;
-const BASE_URL = 'https://platform.socradar.com/api';
+const API_KEY = config.apiKey;
+const COMPANY_ID = config.companyId;
+const BASE_URL = config.baseUrl;
 
 // Check if required environment variables are set
 if (!API_KEY || !COMPANY_ID) {
-  console.error('❌ Error: Required environment variables are not set.');
-  console.error('Please set SOCRADAR_API_KEY and SOCRADAR_COMPANY_ID environment variables.');
-  console.error('Example: SOCRADAR_API_KEY=your_api_key SOCRADAR_COMPANY_ID=your_company_id node test-fraudprotection.js');
+  console.error('❌ Error: API_KEY and COMPANY_ID environment variables are required');
+  console.error('Please set them in your .env.test file or environment variables');
   process.exit(1);
 }
 
-// Headers
-const headers = {
-  'Api-Key': API_KEY,
-  'Content-Type': 'application/json',
-};
+// Helper function to make HTTP requests
+function makeRequest(options, data = null) {
+  return new Promise((resolve, reject) => {
+    // Parse the URL to extract hostname, path, etc.
+    const url = new URL(options.url);
+    
+    // Prepare request options
+    const requestOptions = {
+      hostname: url.hostname,
+      path: url.pathname + (url.search || ''),
+      method: options.method,
+      headers: options.headers,
+    };
+    
+    // Add query parameters if provided
+    if (options.params) {
+      const queryParams = new URLSearchParams();
+      Object.entries(options.params).forEach(([key, value]) => {
+        queryParams.append(key, value);
+      });
+      requestOptions.path += (url.search ? '&' : '?') + queryParams.toString();
+    }
+    
+    const req = https.request(requestOptions, (res) => {
+      let responseData = '';
+      
+      res.on('data', (chunk) => {
+        responseData += chunk;
+      });
+      
+      res.on('end', () => {
+        try {
+          const parsedData = JSON.parse(responseData);
+          if (res.statusCode >= 200 && res.statusCode < 300) {
+            resolve({ data: parsedData, status: res.statusCode });
+          } else {
+            reject({
+              response: {
+                status: res.statusCode,
+                statusText: res.statusMessage,
+                data: parsedData
+              },
+              message: `Request failed with status code ${res.statusCode}`
+            });
+          }
+        } catch (error) {
+          reject({
+            message: 'Error parsing response data',
+            error,
+            responseData
+          });
+        }
+      });
+    });
+    
+    req.on('error', (error) => {
+      reject({
+        message: 'Request error',
+        error
+      });
+    });
+    
+    if (data) {
+      req.write(JSON.stringify(data));
+    }
+    
+    req.end();
+  });
+}
 
 /**
  * Test the Fraud Protection API
  */
-async function testFraudProtection() {
-  console.log('🔍 Testing DRP Fraud Protection API V2...');
+async function testFraudProtectionAPI() {
+  console.log('🚀 Starting SOCRadar Fraud Protection API V2 tests...');
+  console.log('API Key:', API_KEY ? '✅ Set' : '❌ Not Set');
+  console.log('Company ID:', COMPANY_ID);
   
+  // Test basic data retrieval
+  console.log('\n📊 Testing Fraud Protection data retrieval...');
   try {
-    // Test with basic parameters
-    console.log('\n📊 Testing basic fraud protection data retrieval...');
-    const basicResponse = await axios({
+    const response = await makeRequest({
       method: 'GET',
       url: `${BASE_URL}/company/${COMPANY_ID}/fraud-protection/v2`,
       headers,
       params: {
-        limit: 5,
-      },
+        limit: 5
+      }
     });
     
-    console.log(`✅ Success! Retrieved ${basicResponse.data.count} fraud protection records`);
+    console.log(`✅ Success! Found ${response.data.count} fraud protection records`);
     console.log('Sample data:');
-    if (basicResponse.data.results && basicResponse.data.results.length > 0) {
-      const sample = basicResponse.data.results[0];
+    if (response.data.results && response.data.results.length > 0) {
+      const sample = response.data.results[0];
       console.log(JSON.stringify(sample, null, 2));
     } else {
       console.log('No fraud protection records found');
     }
-    
-    // Test with filtering
-    console.log('\n📊 Testing filtered fraud protection data retrieval...');
-    const filteredResponse = await axios({
+  } catch (error) {
+    console.error('❌ Error:', error.message);
+    console.error('Details:', error.response?.data || 'No additional details');
+  }
+  
+  // Test with filtering
+  console.log('\n📊 Testing Fraud Protection data with filters...');
+  try {
+    const response = await makeRequest({
       method: 'GET',
       url: `${BASE_URL}/company/${COMPANY_ID}/fraud-protection/v2`,
       headers,
@@ -82,19 +144,24 @@ async function testFraudProtection() {
       },
     });
     
-    console.log(`✅ Success! Retrieved ${filteredResponse.data.count} filtered fraud protection records`);
-    
-    // Test with date range
-    const today = new Date();
-    const threeMonthsAgo = new Date();
-    threeMonthsAgo.setMonth(today.getMonth() - 3);
-    
-    const formatDate = (date) => {
-      return date.toISOString().split('T')[0];
-    };
-    
-    console.log('\n📊 Testing date-ranged fraud protection data retrieval...');
-    const dateRangedResponse = await axios({
+    console.log(`✅ Success! Found ${response.data.count} open fraud protection records`);
+  } catch (error) {
+    console.error('❌ Error:', error.message);
+    console.error('Details:', error.response?.data || 'No additional details');
+  }
+  
+  // Test with date range
+  const today = new Date();
+  const threeMonthsAgo = new Date();
+  threeMonthsAgo.setMonth(today.getMonth() - 3);
+  
+  const formatDate = (date) => {
+    return date.toISOString().split('T')[0];
+  };
+  
+  console.log('\n📊 Testing date-ranged Fraud Protection data retrieval...');
+  try {
+    const response = await makeRequest({
       method: 'GET',
       url: `${BASE_URL}/company/${COMPANY_ID}/fraud-protection/v2`,
       headers,
@@ -105,22 +172,14 @@ async function testFraudProtection() {
       },
     });
     
-    console.log(`✅ Success! Retrieved ${dateRangedResponse.data.count} date-ranged fraud protection records`);
-    
-    console.log('\n🎉 All DRP Fraud Protection API V2 tests completed successfully!');
+    console.log(`✅ Success! Found ${response.data.count} date-ranged fraud protection records`);
   } catch (error) {
-    console.error('❌ Error testing DRP Fraud Protection API V2:');
-    if (error.response) {
-      console.error(`Status: ${error.response.status}`);
-      console.error('Response data:', error.response.data);
-    } else {
-      console.error(error.message);
-    }
+    console.error('❌ Error:', error.message);
+    console.error('Details:', error.response?.data || 'No additional details');
   }
+  
+  console.log('\n✅ Fraud Protection API tests completed');
 }
 
 // Run the tests
-(async () => {
-  console.log('🚀 Starting SOCRadar DRP Fraud Protection API V2 tests...');
-  await testFraudProtection();
-})();
+testFraudProtectionAPI();

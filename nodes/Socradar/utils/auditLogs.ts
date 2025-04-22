@@ -1,5 +1,4 @@
-import { IExecuteFunctions, INodeExecutionData, NodeOperationError } from 'n8n-workflow';
-import axios, { AxiosRequestConfig } from 'axios';
+import { IExecuteFunctions, IHttpRequestOptions, INodeExecutionData, NodeOperationError } from 'n8n-workflow';
 
 /**
  * Handle all audit logs related operations
@@ -14,8 +13,8 @@ export async function handleAuditLogsOperations(
   const companyId = this.getNodeParameter('companyId', i) as string;
 
   try {
-    if (operation === 'getAll') {
-      return await handleGetAllAuditLogs.call(this, baseUrl, headers, companyId, i);
+    if (operation === 'getAuditLogs') {
+      return await handleGetAuditLogs.call(this, baseUrl, headers, companyId, i);
     }
 
     throw new NodeOperationError(this.getNode(), `The operation "${operation}" is not supported for resource "auditLogs"!`);
@@ -34,9 +33,9 @@ export async function handleAuditLogsOperations(
 }
 
 /**
- * Handle getting all audit logs
+ * Handle getting audit logs data
  */
-async function handleGetAllAuditLogs(
+async function handleGetAuditLogs(
   this: IExecuteFunctions,
   baseUrl: string,
   headers: Record<string, string>,
@@ -44,22 +43,26 @@ async function handleGetAllAuditLogs(
   i: number,
 ): Promise<INodeExecutionData> {
   const additionalFields = this.getNodeParameter('additionalFields', i, {}) as {
+    searchString?: string;
     startDate?: string;
     endDate?: string;
     page?: number;
     limit?: number;
-    userId?: string;
-    actionType?: string;
+    orderDir?: string;
   };
 
-  const endpoint = `${baseUrl}/company/${companyId}/auditlogs`;
-  const queryParams: Record<string, string | number> = {};
+  const endpoint = `${baseUrl}/company/${companyId}/audit-logs`;
+  const queryParams: Record<string, string | number | boolean> = {};
 
+  // Add all additional fields to query parameters
+  if (additionalFields.searchString) {
+    queryParams.searchString = additionalFields.searchString;
+  }
   if (additionalFields.startDate) {
-    queryParams.start_date = additionalFields.startDate.split('T')[0];
+    queryParams.startDate = additionalFields.startDate;
   }
   if (additionalFields.endDate) {
-    queryParams.end_date = additionalFields.endDate.split('T')[0];
+    queryParams.endDate = additionalFields.endDate;
   }
   if (additionalFields.page) {
     queryParams.page = additionalFields.page;
@@ -67,23 +70,20 @@ async function handleGetAllAuditLogs(
   if (additionalFields.limit) {
     queryParams.limit = additionalFields.limit;
   }
-  if (additionalFields.userId) {
-    queryParams.userId = additionalFields.userId;
-  }
-  if (additionalFields.actionType) {
-    queryParams.actionType = additionalFields.actionType;
+  if (additionalFields.orderDir) {
+    queryParams.orderDir = additionalFields.orderDir;
   }
 
-  const options: AxiosRequestConfig = {
+  const options: IHttpRequestOptions = {
     method: 'GET',
     url: endpoint,
     headers,
-    params: queryParams,
+    qs: queryParams,
   };
 
-  const response = await axios(options);
+  const response = await this.helpers.httpRequest(options);
   return {
-    json: response.data,
+    json: response,
     pairedItem: { item: i },
   };
 }

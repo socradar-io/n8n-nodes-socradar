@@ -14,19 +14,13 @@
  * SOCRADAR_API_KEY=your_api_key SOCRADAR_COMPANY_ID=your_company_id node test-brandprotection.js
  */
 
-const axios = require('axios');
-
-// Try to load environment variables from .env file if it exists
-try {
-  require('dotenv').config();
-} catch (error) {
-  console.log('No .env file found, using environment variables directly');
-}
+const https = require('https');
+const { config, headers, testData } = require('./testUtils');
 
 // Configuration
-const API_KEY = process.env.SOCRADAR_API_KEY;
-const COMPANY_ID = process.env.SOCRADAR_COMPANY_ID;
-const BASE_URL = 'https://platform.socradar.com/api';
+const API_KEY = config.apiKey;
+const COMPANY_ID = config.companyId;
+const BASE_URL = config.baseUrl;
 
 // Check if required environment variables are set
 if (!API_KEY || !COMPANY_ID) {
@@ -35,12 +29,6 @@ if (!API_KEY || !COMPANY_ID) {
   console.error('Example: SOCRADAR_API_KEY=your_api_key SOCRADAR_COMPANY_ID=your_company_id node test-brandprotection.js');
   process.exit(1);
 }
-
-// Headers
-const headers = {
-  'Api-Key': API_KEY,
-  'Content-Type': 'application/json',
-};
 
 /**
  * Test the Brand Protection API endpoints
@@ -76,7 +64,7 @@ async function testBrandProtection() {
       // Test with basic parameters
       console.log(`\n📊 Testing ${endpoint.name} data retrieval...`);
       try {
-        const response = await axios({
+        const response = await makeRequest({
           method: 'GET',
           url: endpoint.url,
           headers,
@@ -107,7 +95,7 @@ async function testBrandProtection() {
     // Test with filtering on one endpoint
     console.log('\n📊 Testing filtered Impersonating Domains data retrieval...');
     try {
-      const filteredResponse = await axios({
+      const filteredResponse = await makeRequest({
         method: 'GET',
         url: `${BASE_URL}/company/${COMPANY_ID}/brand-protection/impersonating-domains/v2`,
         headers,
@@ -140,7 +128,7 @@ async function testBrandProtection() {
     
     console.log('\n📊 Testing date-ranged Social Media Findings data retrieval...');
     try {
-      const dateRangedResponse = await axios({
+      const dateRangedResponse = await makeRequest({
         method: 'GET',
         url: `${BASE_URL}/company/${COMPANY_ID}/brand-protection/social-media-findings/v2`,
         headers,
@@ -172,6 +160,76 @@ async function testBrandProtection() {
       console.error(error.message);
     }
   }
+}
+
+// Helper function to make HTTP requests
+function makeRequest(options, data = null) {
+  return new Promise((resolve, reject) => {
+    // Parse the URL to extract hostname, path, etc.
+    const url = new URL(options.url);
+    
+    // Prepare request options
+    const requestOptions = {
+      hostname: url.hostname,
+      path: url.pathname + (url.search || ''),
+      method: options.method,
+      headers: options.headers,
+    };
+    
+    // Add query parameters if provided
+    if (options.params) {
+      const queryParams = new URLSearchParams();
+      Object.entries(options.params).forEach(([key, value]) => {
+        queryParams.append(key, value);
+      });
+      requestOptions.path += (url.search ? '&' : '?') + queryParams.toString();
+    }
+    
+    const req = https.request(requestOptions, (res) => {
+      let responseData = '';
+      
+      res.on('data', (chunk) => {
+        responseData += chunk;
+      });
+      
+      res.on('end', () => {
+        try {
+          const parsedData = JSON.parse(responseData);
+          if (res.statusCode >= 200 && res.statusCode < 300) {
+            resolve({ data: parsedData, status: res.statusCode });
+          } else {
+            reject({
+              response: {
+                status: res.statusCode,
+                statusText: res.statusMessage,
+                data: parsedData
+              },
+              message: `Request failed with status code ${res.statusCode}`
+            });
+          }
+        } catch (error) {
+          reject({
+            message: 'Error parsing response data',
+            error,
+            responseData
+          });
+        }
+      });
+    });
+    
+    req.on('error', (error) => {
+      reject({
+        message: 'Request error',
+        error
+      });
+    });
+    
+    if (data) {
+      req.write(JSON.stringify(data));
+    }
+    
+    req.end();
+  });
 }
 
 // Run the tests

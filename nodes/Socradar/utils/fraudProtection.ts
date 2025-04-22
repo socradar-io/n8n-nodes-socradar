@@ -1,5 +1,4 @@
-import { IExecuteFunctions, INodeExecutionData, NodeOperationError } from 'n8n-workflow';
-import axios, { AxiosRequestConfig } from 'axios';
+import { IExecuteFunctions, IHttpRequestOptions, INodeExecutionData, NodeOperationError } from 'n8n-workflow';
 
 /**
  * Handle all fraud protection related operations
@@ -111,16 +110,16 @@ async function handleGetFraudProtection(
     queryParams.orderDir = additionalFields.orderDir;
   }
 
-  const options: AxiosRequestConfig = {
+  const options: IHttpRequestOptions = {
     method: 'GET',
     url: endpoint,
     headers,
-    params: queryParams,
+    qs: queryParams,
   };
 
-  const response = await axios(options);
+  const response = await this.helpers.httpRequest(options);
   return {
-    json: response.data,
+    json: response,
     pairedItem: { item: i },
   };
 }

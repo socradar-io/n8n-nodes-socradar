@@ -1,5 +1,4 @@
-import { IExecuteFunctions, INodeExecutionData, NodeOperationError } from 'n8n-workflow';
-import axios, { AxiosRequestConfig } from 'axios';
+import { IExecuteFunctions, IHttpRequestOptions, INodeExecutionData, NodeOperationError } from 'n8n-workflow';
 
 /**
  * Handle all dark web monitoring related operations
@@ -82,16 +81,16 @@ async function handleGetBotnetData(
     queryParams.limit = additionalFields.limit;
   }
 
-  const options: AxiosRequestConfig = {
+  const options: IHttpRequestOptions = {
     method: 'GET',
     url: endpoint,
     headers,
-    params: queryParams,
+    qs: queryParams,
   };
 
-  const response = await axios(options);
+  const response = await this.helpers.httpRequest(options);
   return {
-    json: response.data,
+    json: response,
     pairedItem: { item: i },
   };
 }
@@ -133,16 +132,16 @@ async function handleGetBlackmarket(
     queryParams.alarmId = additionalFields.alarmId;
   }
 
-  const options: AxiosRequestConfig = {
+  const options: IHttpRequestOptions = {
     method: 'GET',
     url: endpoint,
     headers,
-    params: queryParams,
+    qs: queryParams,
   };
 
-  const response = await axios(options);
+  const response = await this.helpers.httpRequest(options);
   return {
-    json: response.data,
+    json: response,
     pairedItem: { item: i },
   };
 }
@@ -184,16 +183,16 @@ async function handleGetSuspiciousContent(
     queryParams.alarmId = additionalFields.alarmId;
   }
 
-  const options: AxiosRequestConfig = {
+  const options: IHttpRequestOptions = {
     method: 'GET',
     url: endpoint,
     headers,
-    params: queryParams,
+    qs: queryParams,
   };
 
-  const response = await axios(options);
+  const response = await this.helpers.httpRequest(options);
   return {
-    json: response.data,
+    json: response,
     pairedItem: { item: i },
   };
 }
@@ -235,16 +234,16 @@ async function handleGetPiiExposure(
     queryParams.alarmId = additionalFields.alarmId;
   }
 
-  const options: AxiosRequestConfig = {
+  const options: IHttpRequestOptions = {
     method: 'GET',
     url: endpoint,
     headers,
-    params: queryParams,
+    qs: queryParams,
   };
 
-  const response = await axios(options);
+  const response = await this.helpers.httpRequest(options);
   return {
-    json: response.data,
+    json: response,
     pairedItem: { item: i },
   };
 }
@@ -286,16 +285,16 @@ async function handleGetImContent(
     queryParams.searchString = additionalFields.searchString;
   }
 
-  const options: AxiosRequestConfig = {
+  const options: IHttpRequestOptions = {
     method: 'GET',
     url: endpoint,
     headers,
-    params: queryParams,
+    qs: queryParams,
   };
 
-  const response = await axios(options);
+  const response = await this.helpers.httpRequest(options);
   return {
-    json: response.data,
+    json: response,
     pairedItem: { item: i },
   };
 }

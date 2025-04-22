@@ -1,6 +1,6 @@
 {
   "name": "@socradar/n8n-nodes-socradar",
-  "version": "1.8.4",
+  "version": "1.8.5",
   "description": "Production-ready n8n integration for SOCRadar Extended Threat Intelligence platform",
   "keywords": [
     "n8n-community-node-package",
@@ -78,8 +78,6 @@
     "typescript": "^5.5.3"
   },
   "dependencies": {
-    "axios": "^1.8.1",
-    "dotenv": "^16.4.7"
   },
   "peerDependenciesMeta": {
     "n8n-workflow": {

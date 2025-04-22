@@ -10,6 +10,6 @@ module.exports = {
     '/coverage/'
   ],
   testTimeout: 10000, // 10 seconds
-  setupFiles: ['dotenv/config'],
+  setupFiles: [],
   verbose: true
 };

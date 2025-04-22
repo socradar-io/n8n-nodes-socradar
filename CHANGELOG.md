@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.8.5 (2025-04-22)
+
+### Changed
+- Removed external dependencies:
+  - Replaced axios with n8n's built-in HTTP request functionality
+  - Removed dotenv dependency in favor of a custom environment variable loader
+  - Updated all utility files to use n8n's native HTTP request capabilities
+  - Refactored test files to use Node.js built-in https module
+  - Improved code maintainability and reduced external dependencies
+
 ## 1.8.4 (2025-03-07)
 
 ### Fixed

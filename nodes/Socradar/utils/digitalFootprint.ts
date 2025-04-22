@@ -1,5 +1,4 @@
-import { IExecuteFunctions, INodeExecutionData, NodeOperationError } from 'n8n-workflow';
-import axios, { AxiosRequestConfig } from 'axios';
+import { IExecuteFunctions, IHttpRequestOptions, INodeExecutionData, NodeOperationError } from 'n8n-workflow';
 
 /**
  * Handle all digital footprint related operations
@@ -83,16 +82,16 @@ async function handleGetDigitalAssets(
     queryParams.sortDesc = additionalFields.sortDesc;
   }
 
-  const options: AxiosRequestConfig = {
+  const options: IHttpRequestOptions = {
     method: 'GET',
     url: endpoint,
     headers,
-    params: queryParams,
+    qs: queryParams,
   };
 
-  const response = await axios(options);
+  const response = await this.helpers.httpRequest(options);
   return {
-    json: response.data,
+    json: response,
     pairedItem: { item: i },
   };
 }
@@ -189,16 +188,16 @@ async function handleAddAsset(
       );
   }
 
-  const options: AxiosRequestConfig = {
+  const options: IHttpRequestOptions = {
     method: 'POST',
     url: endpoint,
     headers,
-    data: body,
+    body,
   };
 
-  const response = await axios(options);
+  const response = await this.helpers.httpRequest(options);
   return {
-    json: response.data,
+    json: response,
     pairedItem: { item: i },
   };
 }
@@ -251,17 +250,17 @@ async function handleMarkFalsePositive(
     notes,
   };
 
-  const options: AxiosRequestConfig = {
+  const options: IHttpRequestOptions = {
     method: 'POST',
     url: endpoint,
     headers,
-    data: body,
+    body,
   };
 
   try {
-    const response = await axios(options);
+    const response = await this.helpers.httpRequest(options);
     return {
-      json: response.data,
+      json: response,
       pairedItem: { item: i },
     };
   } catch (error) {
@@ -319,17 +318,17 @@ async function handleToggleMonitoring(
     is_monitor_on: monitor,
   };
 
-  const options: AxiosRequestConfig = {
+  const options: IHttpRequestOptions = {
     method: 'POST',
     url: endpoint,
     headers,
-    data: body,
+    body,
   };
 
   try {
-    const response = await axios(options);
+    const response = await this.helpers.httpRequest(options);
     return {
-      json: response.data,
+      json: response,
       pairedItem: { item: i },
     };
   } catch (error) {

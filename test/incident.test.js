@@ -9,8 +9,82 @@
  * 2. Run with Jest: npm test incident.test.js
  */
 
-const axios = require('axios');
+const https = require('https');
 const { config, headers, testData } = require('./testUtils');
+
+// Helper function to make HTTP requests
+function makeRequest(options, data = null) {
+  return new Promise((resolve, reject) => {
+    // Parse the URL to extract hostname, path, etc.
+    const url = new URL(options.url);
+    
+    // Prepare request options
+    const requestOptions = {
+      hostname: url.hostname,
+      path: url.pathname + (url.search || ''),
+      method: options.method,
+      headers: options.headers,
+    };
+    
+    // Add query parameters if provided
+    if (options.params) {
+      const queryParams = new URLSearchParams();
+      Object.entries(options.params).forEach(([key, value]) => {
+        if (Array.isArray(value)) {
+          value.forEach(v => queryParams.append(key, v));
+        } else if (value !== undefined && value !== null) {
+          queryParams.append(key, value);
+        }
+      });
+      requestOptions.path += (url.search ? '&' : '?') + queryParams.toString();
+    }
+    
+    const req = https.request(requestOptions, (res) => {
+      let responseData = '';
+      
+      res.on('data', (chunk) => {
+        responseData += chunk;
+      });
+      
+      res.on('end', () => {
+        try {
+          const parsedData = JSON.parse(responseData);
+          if (res.statusCode >= 200 && res.statusCode < 300) {
+            resolve({ data: parsedData, status: res.statusCode });
+          } else {
+            reject({
+              response: {
+                status: res.statusCode,
+                statusText: res.statusMessage,
+                data: parsedData
+              },
+              message: `Request failed with status code ${res.statusCode}`
+            });
+          }
+        } catch (error) {
+          reject({
+            message: 'Error parsing response data',
+            error,
+            responseData
+          });
+        }
+      });
+    });
+    
+    req.on('error', (error) => {
+      reject({
+        message: 'Request error',
+        error
+      });
+    });
+    
+    if (data) {
+      req.write(JSON.stringify(data));
+    }
+    
+    req.end();
+  });
+}
 
 /**
  * Get all incidents with optional filters
@@ -19,7 +93,7 @@ async function getAllIncidents(params = {}) {
   const endpoint = `${config.baseUrl}/company/${config.companyId}/incidents/v4`;
   
   try {
-    const response = await axios({
+    const response = await makeRequest({
       method: 'GET',
       url: endpoint,
       headers,
@@ -50,7 +124,7 @@ async function getIncident(incidentId) {
   const endpoint = `${config.baseUrl}/company/${config.companyId}/incidents/v4`;
   
   try {
-    const response = await axios({
+    const response = await makeRequest({
       method: 'GET',
       url: endpoint,
       headers,
@@ -74,11 +148,11 @@ async function addComment(alarmId, comment) {
   const endpoint = `${config.baseUrl}/company/${config.companyId}/alarm/add/comment/v2`;
   
   try {
-    const response = await axios({
+    const response = await makeRequest({
       method: 'POST',
       url: endpoint,
       headers,
-      data: {
+      body: {
         alarm_id: alarmId,
         comment: comment
       }
@@ -99,11 +173,11 @@ async function addTag(alarmId, tag) {
   const endpoint = `${config.baseUrl}/company/${config.companyId}/alarm/tag`;
   
   try {
-    const response = await axios({
+    const response = await makeRequest({
       method: 'POST',
       url: endpoint,
       headers,
-      data: {
+      body: {
         alarm_id: alarmId,
         tag: tag,
         action: 'add'
@@ -125,11 +199,11 @@ async function removeTag(alarmId, tag) {
   const endpoint = `${config.baseUrl}/company/${config.companyId}/alarm/tag`;
   
   try {
-    const response = await axios({
+    const response = await makeRequest({
       method: 'POST',
       url: endpoint,
       headers,
-      data: {
+      body: {
         alarm_id: alarmId,
         tag: tag,
         action: 'remove'
@@ -155,11 +229,11 @@ async function changeSeverity(alarmId, severity) {
   }
   
   try {
-    const response = await axios({
+    const response = await makeRequest({
       method: 'POST',
       url: endpoint,
       headers,
-      data: {
+      body: {
         alarm_id: alarmId,
         severity: severity
       }
@@ -180,11 +254,11 @@ async function changeAssignee(alarmId, userEmail) {
   const endpoint = `${config.baseUrl}/company/${config.companyId}/alarm/${alarmId}/assignee`;
   
   try {
-    const response = await axios({
+    const response = await makeRequest({
       method: 'POST',
       url: endpoint,
       headers,
-      data: {
+      body: {
         user_emails: userEmail
       }
     });
@@ -204,7 +278,7 @@ async function getAssigneeOptions() {
   const endpoint = `${config.baseUrl}/company/${config.companyId}/alarm/assignee_options`;
   
   try {
-    const response = await axios({
+    const response = await makeRequest({
       method: 'GET',
       url: endpoint,
       headers
@@ -225,11 +299,11 @@ async function askAnalyst(alarmId, message) {
   const endpoint = `${config.baseUrl}/company/${config.companyId}/incidents/ask/analyst/v2`;
   
   try {
-    const response = await axios({
+    const response = await makeRequest({
       method: 'POST',
       url: endpoint,
       headers,
-      data: {
+      body: {
         alarm_id: alarmId,
         comment: message
       }

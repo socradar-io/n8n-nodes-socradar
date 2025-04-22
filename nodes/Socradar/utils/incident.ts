@@ -1,5 +1,4 @@
-import { IExecuteFunctions, INodeExecutionData, NodeOperationError } from 'n8n-workflow';
-import axios, { AxiosRequestConfig } from 'axios';
+import { IExecuteFunctions, IHttpRequestOptions, INodeExecutionData, NodeOperationError } from 'n8n-workflow';
 
 /**
  * Handle all incident-related operations
@@ -93,16 +92,16 @@ async function handleGetAllIncidents(
     queryParams.sort_order = additionalFields.sort_order;
   }
 
-  const options: AxiosRequestConfig = {
+  const options: IHttpRequestOptions = {
     method: 'GET',
     url: endpoint,
     headers,
-    params: queryParams,
+    qs: queryParams,
   };
 
-  const response = await axios(options);
+  const response = await this.helpers.httpRequest(options);
   return {
-    json: response.data,
+    json: response,
     pairedItem: { item: i },
   };
 }
@@ -125,16 +124,16 @@ async function handleGetIncident(
     notification_ids: [incidentId],
   };
 
-  const options: AxiosRequestConfig = {
+  const options: IHttpRequestOptions = {
     method: 'GET',
     url: endpoint,
     headers,
-    params: queryParams,
+    qs: queryParams,
   };
 
-  const response = await axios(options);
+  const response = await this.helpers.httpRequest(options);
   return {
-    json: response.data,
+    json: response,
     pairedItem: { item: i },
   };
 }
@@ -154,20 +153,20 @@ async function handleAddComment(
   const userEmail = this.getNodeParameter('userEmail', i) as string;
   const endpoint = `${baseUrl}/company/${companyId}/alarm/add/comment/v2`;
 
-  const options: AxiosRequestConfig = {
+  const options: IHttpRequestOptions = {
     method: 'POST',
     url: endpoint,
     headers,
-    data: { 
+    body: { 
       alarm_id: incidentId,
       comment: comment,
       user_email: userEmail,
     },
   };
 
-  const response = await axios(options);
+  const response = await this.helpers.httpRequest(options);
   return {
-    json: response.data,
+    json: response,
     pairedItem: { item: i },
   };
 }
@@ -186,19 +185,19 @@ async function handleAddTag(
   const tag = this.getNodeParameter('tag', i) as string;
   const endpoint = `${baseUrl}/company/${companyId}/alarm/tag`;
 
-  const options: AxiosRequestConfig = {
+  const options: IHttpRequestOptions = {
     method: 'POST',
     url: endpoint,
     headers,
-    data: { 
+    body: { 
       alarm_id: incidentId,
       tag: tag,
     },
   };
 
-  const response = await axios(options);
+  const response = await this.helpers.httpRequest(options);
   return {
-    json: response.data,
+    json: response,
     pairedItem: { item: i },
   };
 }
@@ -217,19 +216,19 @@ async function handleRemoveTag(
   const tag = this.getNodeParameter('tag', i) as string;
   const endpoint = `${baseUrl}/company/${companyId}/alarm/tag`;
 
-  const options: AxiosRequestConfig = {
+  const options: IHttpRequestOptions = {
     method: 'DELETE',
     url: endpoint,
     headers,
-    data: { 
+    body: { 
       alarm_id: incidentId,
       tag: tag,
     },
   };
 
-  const response = await axios(options);
+  const response = await this.helpers.httpRequest(options);
   return {
-    json: response.data,
+    json: response,
     pairedItem: { item: i },
   };
 }
