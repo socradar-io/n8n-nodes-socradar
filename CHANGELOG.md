@@ -11,6 +11,9 @@ All notable changes to this project will be documented in this file.
   - Updated all utility files to use n8n's native HTTP request capabilities
   - Refactored test files to use Node.js built-in https module
   - Improved code maintainability and reduced external dependencies
+- Updated development dependencies:
+  - Upgraded ESLint from v8 to v9
+  - Updated TypeScript ESLint plugins for compatibility
 
 ## 1.8.4 (2025-03-07)
 
