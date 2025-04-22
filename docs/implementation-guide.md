@@ -1,61 +1,6 @@
 # SOCRadar n8n Integration - Implementation Guide
 
-This guide provides detailed information about the implementation of the SOCRadar n8n integration, focusing on the architecture, code structure, and extension patterns.
-
-## Architecture Overview
-
-The SOCRadar n8n integration follows a consolidated single-node architecture, where all functionality is implemented in the main `Socradar.node.ts` file. This approach provides several benefits:
-
-1. **Simplified User Experience**: Users interact with a single node for all SOCRadar functionality
-2. **Consistent Interface**: All operations follow the same pattern and structure
-3. **Easier Maintenance**: Code is centralized and follows consistent patterns
-4. **Streamlined Updates**: New features can be added without creating additional nodes
-
-## Architecture
-
-The SOCRadar n8n integration follows a consolidated single-node architecture. All functionality is implemented within the main `Socradar.node.ts` file, which provides a consistent interface for all SOCRadar API resources:
-
-- Incident Management
-- Takedown Management
-- Digital Footprint API
-- Dark Web Monitoring API V2
-- DRP Fraud Protection API V2
-- Brand Protection API V2
-- User Audit Logs
-
-## Code Structure
-
-### Main Components
-
-- **Node Definition**: Defines the node properties, icon, and version
-- **Resource Definitions**: Defines the available resources (Incident, Takedown, Digital Footprint, etc.)
-- **Operation Definitions**: Defines the operations available for each resource
-- **Parameter Definitions**: Defines the parameters required for each operation
-- **Execution Logic**: Implements the actual API calls and data processing
-
-### Key Files
-
-- `nodes/Socradar/Socradar.node.ts`: Main node implementation
-- `credentials/SocradarApi.credentials.ts`: Credential definition for API authentication
-- `nodes/Socradar/utils/*.ts`: Utility files for different API functionalities
-- `test/*.js`: Test scripts for different API functionalities
-
-## Dependencies and HTTP Requests
-
-As of version 1.8.5, the SOCRadar n8n integration has been optimized to use n8n's built-in functionality instead of external dependencies:
-
-1. **HTTP Requests**: All HTTP requests use n8n's built-in `this.helpers.httpRequest()` method instead of axios
-   - Request configuration uses `IHttpRequestOptions` interface
-   - Query parameters are specified in the `qs` property (instead of `params`)
-   - Request bodies are specified in the `body` property (instead of `data`)
-
-2. **Testing**: Test files use Node.js built-in `https` module instead of axios
-   - A custom `makeRequest` helper function is implemented in each test file
-   - Environment variables are loaded using a custom implementation in `testUtils.js`
-
-This approach reduces external dependencies, improves maintainability, and aligns with n8n's recommended practices.
-
-## Implementation Patterns
+{{ ... }}
 
 ### Resource Pattern
 
@@ -65,7 +10,7 @@ Resources are defined in the `description.resources` array, with each resource h
 {
   name: 'resourceName',
   displayName: 'Resource Display Name',
-  description: 'Description of the resource',
+  description: 'Description of the resource'
 }
 ```
 
@@ -78,7 +23,7 @@ Operations are defined in the `description.properties.operation.options` array, 
   name: 'operationName',
   displayName: 'Operation Display Name',
   description: 'Description of the operation',
-  value: 'operationValue',
+  value: 'operationValue'
 }
 ```
 
@@ -93,7 +38,7 @@ Parameters are defined using n8n's parameter system, with consistent patterns fo
   type: 'string', // or other types
   required: true, // or false
   default: '',
-  description: 'Description of the parameter',
+  description: 'Description of the parameter'
 }
 ```
 
@@ -114,7 +59,7 @@ const options: IHttpRequestOptions = {
   method: 'GET',
   url: endpoint,
   headers,
-  qs: queryParams,
+  qs: queryParams
 };
 
 const response = await this.helpers.httpRequest(options);
@@ -131,7 +76,7 @@ The Digital Footprint API implementation follows the established patterns with t
 {
   name: 'digitalFootprint',
   displayName: 'Digital Footprint',
-  description: 'Manage digital assets and cloud resources',
+  description: 'Manage digital assets and cloud resources'
 }
 ```
 
@@ -207,18 +152,30 @@ For detailed documentation on the Dark Web Monitoring API V2, see [Dark Web Moni
 
 The DRP Fraud Protection API V2 implementation provides access to fraud detection data to help organizations monitor and mitigate fraud risks:
 
-1. **Fraud Protection Data**: Comprehensive information about detected fraud instances
+### Operations
 
-The implementation follows a consistent pattern:
-- Required parameters: Company ID
-- Optional parameters: Extensive filtering options including:
+1. **Get Fraud Protection Data**
+   - Retrieves comprehensive information about detected fraud instances
+   - Endpoint: `/company/{company_id}/fraud-protection/v2`
+   - Method: GET
+
+### Parameter Handling
+
+- **Required Parameters**:
+  - Company ID: Required for all operations
+- **Optional Parameters**: Extensive filtering options including:
   - Search string
   - Record status and reason
   - Alarm status
   - CVV and country code
   - Date ranges
   - Pagination controls
-- Error handling: Consistent error reporting with detailed messages
+
+### Response Processing
+
+- Success responses include the full API response
+- Error responses include detailed error information
+- Consistent error reporting with detailed messages
 
 The API is designed to help different systems, such as e-commerce websites or financial systems, to communicate and share information about detected fraud instances, improving security measures and reducing the chances of fraudulent activities.
 
@@ -228,22 +185,37 @@ For detailed documentation on the DRP Fraud Protection API V2, see [Fraud Protec
 
 The Brand Protection API V2 implementation provides access to brand protection data to help organizations monitor and mitigate brand-related risks:
 
-1. **Impersonating Accounts**: Information about social media accounts impersonating your brand
-2. **Impersonating Domains**: Information about domains that may be impersonating your brand
-3. **Rogue Mobile Applications**: Information about unauthorized mobile applications using your brand
-4. **Bad Reputation**: Information about brand mentions with negative reputation
-5. **Social Media Findings**: Information about brand-related findings on social media platforms
+### Operations
 
-The implementation follows a consistent pattern:
-- Required parameters: Company ID and Operation Type
-- Optional parameters: Extensive filtering options including:
+1. **Get Brand Protection Data**
+   - Retrieves brand protection data based on operation type
+   - Endpoint: `/company/{company_id}/brand-protection/v2`
+   - Method: GET
+   - Operation Types:
+     - Impersonating Accounts: Information about social media accounts impersonating your brand
+     - Impersonating Domains: Information about domains that may be impersonating your brand
+     - Rogue Mobile Applications: Information about unauthorized mobile applications using your brand
+     - Bad Reputation: Information about brand mentions with negative reputation
+     - Social Media Findings: Information about brand-related findings on social media platforms
+
+### Parameter Handling
+
+- **Required Parameters**:
+  - Company ID: Required for all operations
+  - Operation Type: Specifies the type of brand protection data to retrieve
+- **Optional Parameters**: Extensive filtering options including:
   - Search string
   - Record status and reason
   - Alarm status
   - Country code
   - Date ranges
   - Pagination controls
-- Error handling: Consistent error reporting with detailed messages
+
+### Response Processing
+
+- Success responses include the full API response
+- Error responses include detailed error information
+- Consistent error reporting with detailed messages
 
 The API is designed to help organizations protect their brand identity across various digital channels, detect potential brand infringements, and take appropriate actions to mitigate risks.
 
@@ -281,6 +253,32 @@ To add a new operation to an existing resource:
 ## API Authentication
 
 All API calls use the SOCRadar API credentials defined in `SocradarApi.credentials.ts`. The API key is included in the `Api-Key` header for all requests.
+
+Authentication is handled using n8n's built-in credential system:
+
+```typescript
+const credentials = await this.getCredentials('socradarApi');
+const headers = {
+  'Api-Key': credentials.apiKey as string,
+  'Content-Type': 'application/json'
+};
+```
+
+These headers are then used in the HTTP request options:
+
+```typescript
+const options: IHttpRequestOptions = {
+  method: 'GET',
+  url: endpoint,
+  headers,
+  qs: queryParams
+};
+
+const response = await this.helpers.httpRequest(options);
+return response;
+```
+
+This approach ensures secure handling of API credentials and consistent authentication across all API calls.
 
 ## Versioning
 
