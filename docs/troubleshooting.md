@@ -67,6 +67,35 @@ This guide provides solutions for common issues you might encounter when using t
 3. Optimize workflows to reduce the number of API calls
 4. Contact SOCRadar support to discuss rate limit increases
 
+## HTTP Request Issues
+
+### Error: "Request failed" or "Connection error"
+
+**Possible causes:**
+- Network connectivity issues
+- SOCRadar API service unavailability
+- Incorrect request configuration
+
+**Solutions:**
+1. Check your network connectivity
+2. Verify the SOCRadar API status
+3. Ensure the request URL is correct
+4. Check that the request parameters are properly formatted
+5. Verify that the request headers are correctly set
+
+### Error: "Invalid request options"
+
+**Possible causes:**
+- Incorrect parameter format for n8n's built-in HTTP request functionality
+- Using deprecated parameter names
+
+**Solutions:**
+1. Ensure you're using the correct parameter names:
+   - Use `qs` for query parameters (not `params`)
+   - Use `body` for request body (not `data`)
+2. Check that the request options match the `IHttpRequestOptions` interface
+3. Update to the latest version of the SOCRadar nodes package (1.8.5+)
+
 ## Response Issues
 
 ### Error: "No data returned"
@@ -157,6 +186,17 @@ This guide provides solutions for common issues you might encounter when using t
 1. Uninstall all versions of the package and reinstall
 2. Check for any conflicting packages
 3. Update to the latest version of n8n and the SOCRadar nodes
+
+### Error: "Missing dependency"
+
+**Possible causes:**
+- Outdated version of the package that still requires external dependencies
+- Incomplete installation
+
+**Solutions:**
+1. Update to version 1.8.5 or later, which has no external dependencies
+2. Reinstall the package to ensure all files are properly installed
+3. Check n8n logs for any specific dependency errors
 
 ## Getting Help
 

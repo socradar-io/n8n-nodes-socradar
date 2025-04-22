@@ -37,7 +37,23 @@ The SOCRadar n8n integration follows a consolidated single-node architecture. Al
 
 - `nodes/Socradar/Socradar.node.ts`: Main node implementation
 - `credentials/SocradarApi.credentials.ts`: Credential definition for API authentication
-- `test-*.js`: Test scripts for different API functionalities
+- `nodes/Socradar/utils/*.ts`: Utility files for different API functionalities
+- `test/*.js`: Test scripts for different API functionalities
+
+## Dependencies and HTTP Requests
+
+As of version 1.8.5, the SOCRadar n8n integration has been optimized to use n8n's built-in functionality instead of external dependencies:
+
+1. **HTTP Requests**: All HTTP requests use n8n's built-in `this.helpers.httpRequest()` method instead of axios
+   - Request configuration uses `IHttpRequestOptions` interface
+   - Query parameters are specified in the `qs` property (instead of `params`)
+   - Request bodies are specified in the `body` property (instead of `data`)
+
+2. **Testing**: Test files use Node.js built-in `https` module instead of axios
+   - A custom `makeRequest` helper function is implemented in each test file
+   - Environment variables are loaded using a custom implementation in `testUtils.js`
+
+This approach reduces external dependencies, improves maintainability, and aligns with n8n's recommended practices.
 
 ## Implementation Patterns
 
@@ -88,8 +104,22 @@ API calls follow a consistent pattern:
 1. Extract parameters from `items[i].json`
 2. Construct the API endpoint URL
 3. Set up request options with headers and parameters
-4. Make the API call using the credentials
+4. Make the API call using n8n's built-in HTTP request functionality
 5. Process and return the response
+
+Example:
+
+```typescript
+const options: IHttpRequestOptions = {
+  method: 'GET',
+  url: endpoint,
+  headers,
+  qs: queryParams,
+};
+
+const response = await this.helpers.httpRequest(options);
+return response;
+```
 
 ## Digital Footprint API Implementation
 
