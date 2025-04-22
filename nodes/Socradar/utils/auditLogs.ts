@@ -51,7 +51,7 @@ async function handleGetAllAuditLogs(
 		actionType?: string;
   };
 
-  const endpoint = `${baseUrl}/company/${companyId}/auditLogs`;
+  const endpoint = `${baseUrl}/company/${companyId}/auditlogs`;
   const queryParams: Record<string, string | number | boolean> = {};
 
   // Add all additional fields to query parameters
