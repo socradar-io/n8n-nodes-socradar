@@ -13,8 +13,8 @@ export async function handleAuditLogsOperations(
   const companyId = this.getNodeParameter('companyId', i) as string;
 
   try {
-    if (operation === 'getAuditLogs') {
-      return await handleGetAuditLogs.call(this, baseUrl, headers, companyId, i);
+    if (operation === 'getAll') {
+      return await handleGetAllAuditLogs.call(this, baseUrl, headers, companyId, i);
     }
 
     throw new NodeOperationError(this.getNode(), `The operation "${operation}" is not supported for resource "auditLogs"!`);
@@ -33,9 +33,9 @@ export async function handleAuditLogsOperations(
 }
 
 /**
- * Handle getting audit logs data
+ * Handle getting all audit logs
  */
-async function handleGetAuditLogs(
+async function handleGetAllAuditLogs(
   this: IExecuteFunctions,
   baseUrl: string,
   headers: Record<string, string>,
