@@ -145,6 +145,7 @@ The consolidated SOCRadar node provides access to all SOCRadar Extended Threat I
 
 ## Version History
 
+- **1.8.6**: Added repository link and improved package structure for n8n compatibility
 - **1.8.5**: Removed external dependencies (axios, dotenv) in favor of n8n's built-in functionality
 - **1.8.4**: Fixed credential icon display issue
 - **1.8.2**: Fixed README.md with correct package name and latest features

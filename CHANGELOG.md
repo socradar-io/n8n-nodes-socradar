@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.8.6 (2025-04-23)
+
+### Added
+- Added repository field to package.json to link GitHub repository with npm package
+- Improved package structure for better compatibility with n8n community package requirements
+
+### Changed
+- Enhanced package structure for better security scan compatibility
+
 ## 1.8.5 (2025-04-22)
 
 ### Changed
