@@ -3,7 +3,7 @@
 # Build and package the n8n-nodes-socradar module
 # This script automates the build process for the SOCRadar n8n integration
 
-echo "🚀 Building SOCRadar n8n Integration v1.8.5"
+echo "🚀 Building SOCRadar n8n Integration v1.8.6"
 
 # Check for dependencies
 if ! command -v pnpm &> /dev/null; then
