@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## 1.8.7 (2025-04-23)
+
+### Changed
+- Fix Github Url
+
 ## 1.8.6 (2025-04-23)
 
 ### Added
